@@ -1,22 +1,23 @@
 
 # Setting up cluster and accounts
- [Redhat 공식 문서](https://docs.openshift.com/rosa/rosa_getting_started/rosa-getting-started-workflow.html)를 참조해 진행한다. 
+ [Redhat 공식 문서](https://docs.openshift.com/rosa/rosa_getting_started/rosa-getting-started-workflow.html)를 참조한다. 
 
 
 실제 작업은 [ROSA Workshop 자료](https://openshift4-on-aws.awsworkshop.io/4-rosa-track/2-deploying-rosa/1-prerequisites/1_rosa-prerequisites.html)를 참조 한다.
-## Prerequisites
+## Prerequisites 
+### summary
  - Minimun SCP
- - Red Hat managed IAM references for AWS
+ - Red Hat managed IAM references for AWS : Redhat login 계정 필요
  - Service Quota
 
 
-### Step 1
-Review the prerequisites documentation https://docs.openshift.com/rosa/rosa_getting_started/rosa-aws-prereqs.html
+### Step 1 Review the prerequisites documentation
+ -  https://docs.openshift.com/rosa/rosa_getting_started/rosa-aws-prereqs.html
 
-https://docs.openshift.com/rosa/rosa_getting_started/rosa-creating-cluster.html
+ - https://docs.openshift.com/rosa/rosa_getting_started/rosa-creating-cluster.html
 
-### Step 2
-AWS CLI, AWS Config
+### Step 2 - AWS Config 
+AWS CLI, AWS Credential Config
 
 ### Step 3 - install ROSA CLI, SetUp
 
@@ -89,7 +90,7 @@ I: To create this cluster again in the future, you can run:
 rosa logs install -c kyobo-public --watch
 ```
 
->> 약 40분 소요
+> 약 40분 소요
 
 #### Install 완료 후
 ```bash
