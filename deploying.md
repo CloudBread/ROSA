@@ -122,6 +122,15 @@ I: It may take up to a minute for the account to become active.
 위에 제공된 패스워드로 접속
 
 
+## Deploy sample App
+``` bash
+oc apply -f nginx.yaml 
+
+oc get pods
+
+oc get svc sample-service
+```
+
 
 ---
 #### Install Notes - 2021.06.11
