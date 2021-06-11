@@ -1,10 +1,17 @@
 
-
+# Setting up cluster and accounts
+ [Redhat 공식 문서](https://docs.openshift.com/rosa/rosa_getting_started/rosa-getting-started-workflow.html)를 참조해 진행한다. 
 
 ## Prerequisites
+ - Minimun SCP
+ - Red Hat managed IAM references for AWS
+ - Service Quota
+
 
 ### Step 1
 Review the prerequisites documentation https://docs.openshift.com/rosa/rosa_getting_started/rosa-aws-prereqs.html
+
+https://docs.openshift.com/rosa/rosa_getting_started/rosa-creating-cluster.html
 
 ### Step 2
 AWS CLI, AWS Config
@@ -30,7 +37,8 @@ chmod 755 oc
 sudo mv oc /usr/local/bin/
 ```
 
-3. enable ROSA
+3. enable ROSA  
+
 ![](images/enable-rosa.gif)
 
 4. ROSA init
@@ -50,6 +58,38 @@ rosa create cluster --interactive
 ![](images/create-cluster.gif)
 
 
+#### Example
+```bash
+rosa create cluster --interactive
+I: Interactive mode enabled.
+Any optional fields can be left empty and a default will be selected.
+? Cluster name: kyobo-public
+? Multiple availability zones (optional): Yes
+? AWS region: ap-northeast-2
+? OpenShift version: 4.7.13
+? Install into an existing VPC (optional): No
+? Compute nodes instance type (optional): 
+? Enable autoscaling (optional): Yes
+? Min replicas: 3
+? Max replicas: 3
+? Machine CIDR: 10.0.0.0/16
+? Service CIDR: 172.30.0.0/16
+? Pod CIDR: 10.128.0.0/14
+? Host prefix: 23
+? Private cluster (optional): No
+I: Creating cluster 'kyobo-public'
+I: To create this cluster again in the future, you can run:
+   rosa create cluster --cluster-name kyobo-public --multi-az --region ap-northeast-2 --version 4.7.13 --enable-autoscaling --min-replicas 3 --max-replicas 3 --machine-cidr 10.0.0.0/16 --service-cidr 172.30.0.0/16 --pod-cidr 10.128.0.0/14 --host-prefix 23
+```
+
+#### Install 진행사항 보기 
+```bash
+rosa logs install -c kyobo-public --watch
+```
+
+>> 약 40분 소요
+
+#### Install 완료 후
 ```bash
 rosa list clusters
 
@@ -58,6 +98,68 @@ rosa list clusters
 rosa describe cluster -c <cluster-name>
 ```
 
+#### Accessing ROSA Cluster
+https://docs.openshift.com/rosa/rosa_getting_started/rosa-accessing-cluster.html#rosa-accessing-cluster
+
+```bash
+rosa create admin --cluster=<cluster_name>
+
+rosa create admin --cluster=kyobo-public
+W: It is recommended to add an identity provider to login to this cluster. See 'rosa create idp --help' for more information.
+I: Admin account has been added to cluster 'kyobo-public'.
+I: Please securely store this generated password. If you lose this password you can delete and recreate the cluster admin user.
+I: To login, run the following command:
+
+   oc login https://api.kyobo-public.76tq.p1.openshiftapps.com:6443 --username cluster-admin --password IjIk8-Htkus-XXXXXX
+
+I: It may take up to a minute for the account to become active.
+```
+
+#### Login Console with username and pwd
+위에 제공된 패스워드로 접속
+
+
+
+---
+#### Install Notes - 2021.06.11
+ - CloudFormation이 아니고, Terraform module으로 만든다. 
+   - `rosa logs install -c kyobo-public --watch` 로 보면 만들고 있는 resouce를 추적할 수 있다. 
+   ```bash
+   time="2021-06-10T22:20:09Z" level=debug msg="module.masters.aws_network_interface.master[2]: Creating..."
+   time="2021-06-10T22:20:11Z" level=debug msg="module.vpc.aws_security_group_rule.worker_ingress_services_tcp: Creation complete after 14s [id=sgrule-2711114762]"
+    ```
+ - 초기에 bootstrap이라는 EC2 Instance가 만들어 졌다가, Terminate 된다.
+  ![](images/bootstrap-1.png)
+  ![](images/bootstrap-2.png)
+
+ 1. VPC
+ 2. Master Node
+ 3. NLB
+
+ time="2021-06-10T22:25:32Z" level=info msg="Waiting up to 30m0s for bootstrapping to complete..." 
+  - 이때 시간이 만이 걸리고, master node가 NLB의 Target group에 unhealthy로 나오는건(6443 port), Master Node 설치중으로 보인다. 
+
+ time="2021-06-10T22:40:38Z" level=debug msg="Still waiting for the cluster to initialize: Working towards 4.7.13: 634 of 669 done (94% complete)"
+ - Worker Node healthy로 변경
+
+
+
+
+
+
+
+
+만들어지는 순서
+VPC
+
+
+
+참조 : 
+
+ - [Creating a ROSA Cluster from RedHat](https://docs.openshift.com/rosa/rosa_getting_started/rosa-creating-cluster.html) 
+ - CIDR 계산 App: https://example-wgordon.apps.osd4-demo.u6k6.p1.openshiftapps.com/
+ - AWS Blog : https://aws.amazon.com/blogs/containers/red-hat-openshift-service-on-aws-architecture-and-networking/
+ - Delete ROSA : https://docs.openshift.com/rosa/rosa_getting_started/rosa-deleting-cluster.html
 
 ```bash
 rosa
@@ -79,79 +181,3 @@ rosa whoami
 rosa init
 
 ```
-
-
-### Step 4 - ROSA Config
-se
-
-Open https://portal.aws.amazon.com/billing/signup.
-Follow the online instructions.
-Part of the sign-up procedure involves receiving a phone call and entering a verification code on the phone keypad.
-Step 3
-Create a Red Hat account
-
-If you do not already have a Red Hat account, create one here https://cloud.redhat.com. Accept the required terms and conditions. Then check your email for a verification link.
-Step 4
-Create an IAM user
-
-https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users_create.html
-https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html
-Step 5
-Create SCP
-
-https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_create.html
-https://docs.openshift.com/rosa/rosa_getting_started/rosa-aws-prereqs.html#rosa-minimum-spc_prerequisites
-Step 6
-Download, install and configure AWS CLI
-
-https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html
-
-If you’ve just installed the AWS CLI or want to simply make sure it is using the correct AWS account, follow these steps in a terminal:
-
-aws configure
-provide the AWS Access Key ID and press enter
-provide the AWS Secret Access Key and press enter
-provide default region you want to deploy into
-It should look like the following as an example:
-
-$ aws configure AWS Access Key ID: AKIA0000000000000000 AWS Secret Access Key: NGvmP0000000000000000000000000 Default region name: us-west-2 Default output format: table Verify the Configuration#
-
-If you are making use of AWS cloud 9, Cloud 9 comes with the AWS CLI pre-installed, you will however need to run aws configure to update and make sure that the credencials being used have the policies needed for ROSA and that you have the correct AWS region.
-
-Step 7
-Download, install and configure ROSA CLI
-
-The ROSA CLI is a command line tool used to provision and manage Red Hat OpenShift clusters on AWS, this tool does not replace the more traditiona oc or kubectl commands for manageing OpenShift. The ROSA CLI will depend on and interact with the AWS CLI. Permissions needed for creating AWS resources such as VPCs, EC2 instances etc will be defined when configuring the AWS CLI in Step 6.
-
-You can download the latest version of the ROSA CLI fro you OS here: https://github.com/openshift/rosa/releases/tag/v1.0.2
-
-Linux instructions
-
-wget https://github.com/openshift/rosa/releases/download/v1.0.2/rosa-linux-amd64
-chmod 755 rosa-linux-amd64
-sudo mv rosa-linux-amd64 /usr/local/bin/rosa
-Step 8
-download and install oc
-
-rosa download oc
-ls
-tar zxvf openshiftxxxx
-chmod 755 oc
-sudo mv oc /usr/local/bin/
-Step 9
-Enable the ROSA service
-
-Go to the AWS ROSA console home
-console.aws.amazon.com/rosa/home
-Click on the Enable ROSA button
-Rosa console
-Step 10
-ROSA init
-
-ROSA init will run through several steps, it launch a CloudFormation infrastructure as code stack which creates an IAM user within the account. It will validate if the correct SCP permisions are in place, check AWS service limits such as VPC, EC2 instances, EIPS. Check if the ROSA service has been enabled. Rosa init will link to your Red Hat accout. ROSA init need only be run once within the account and each of these steps can be run separately however I find it faster to simply process the init and have it do everything for me.
-
-rosa init
-
-Create ROSA Cluster
-Configuring users and IDP
-Cluster Access

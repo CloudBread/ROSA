@@ -45,52 +45,57 @@ rosa create cluster --cluster-name testcluster --multi-az --region us-west-2 --v
  - existing VPC를 지정하지 않으면 VPC 생성
  - Master 3 EA, Infra 3 EA (각 AZ당 1개)
 
-#### Subnet sizing and address spaces
+## Subnet sizing and address spaces
  ![cidr](images/rosa-arch-cidr.png) 
 
 **1. Machine CIDR 10.0.0.0/16**  
-AWS VPC의 IP Address 영역으로, 기존에 존재하는 VPC를 사용하는 경우 그 VPC CIDR을 반영해야 한다.  
+AWS VPC의 IP Address 영역으로, 기존에 만들어 놓은 VPC를 사용하는 경우 그 VPC CIDR을 반영해야 한다.  
 새롭게 구성이 되면 동일한 크기의 6개의 서브넷으로 구성된다.   
 명심해야 할 것은 **public subnet에 많은 리소스가 필요하지는 않기 때문에 크게 잡을 필요는 없다.** (주로 load balancer와 NAT gateway interface)
 
 **Service CIDR and POD CIDR**
 OpenShift가 사용한 SDN private IP address 영역이다. 
 
-
+CIDR 정의로 돕는 App: 
 https://example-wgordon.apps.osd4-demo.u6k6.p1.openshiftapps.com/
 
-### 기본 VPC를 사용하는 경우 subnet 선택 가능
+### 기존 VPC를 사용하는 경우 subnet 선택 가능
 ![](images/rosa-subnet-1.png)
 
 
 ## Public Cluster vs Private Cluster
 
 
-### Public Cluster
+### 1. Public Cluster
 ![public](images/rosa-arch-multi.png)
 
-### Private Cluster
+### 2. Private Cluster
 ![private](images/rosa-arch-private.png)
 
-Default deployment (Single AZ)
 
 
+### Private Cluster vs Public Cluster
+이 둘의 차이점은 생성할때, Openshift에서 운영되는 application workload를 private에서 접근하느냐? public에서 접근하느냐?의 차이이며, 사용할 public facing loadbalancer를 생성할것 인가 아닌가의 차이이다. 
 
-Private Cluster vs Public Cluster의 차이점은 생성할때, workload가 사용할 public facing loadbalancer를 생성할것 인가 아닌가의 차이이다. 
 
+Public cluster을 선택하면 80, 443포트를 열고 있는 Public CLB와, 내부연결(VPC peering등)을 Infra router layer에 forward하는 internal CLB가 생성된다. 
+
+Private cluster는 customer용(80, 443) public facing load balancer는 만들지 않는다. 
+
+ 
 
 ## Connection Flow
-1. Customer/application consumer connection flow
+### 1. Customer/application consumer connection flow
 
-Customer의 연결은 80 또는 443 연결
+Customer의 연결은 80 또는 443으로 연결된다. 
 
 **외부에서 들어오는 요청**
  - 외부에서 들어오는 요청은 **public Classic Load Balancer**가 받아서, Infrasture node에 있는 Openshift router layer로 forward 한다.
 **내부에서 오는 요청**
  - VPC 내부, AWS DirectConnect, Peering, VPN, TransitGW 에 오는 경우는 **internal Classic Load Balancer**가 받아서, Infrasture node에 있는 Openshift router layer로 forward 한다. 
 
-2. Administrative or SRE connection flow
-Developers, administrators, SRE teams 은 다음 flow를 따른다. 
+### 2. Administrative or SRE connection flow
+- Developers, administrators, SRE teams의 요청은 다음 flow를 따른다. 
 
 **외부에서 들어오는 요청**
 
@@ -101,8 +106,8 @@ Developers, administrators, SRE teams 은 다음 flow를 따른다.
 - VPC 내부, AWS DirectConnect, Peering, VPN, TransitGW 에 오는 경우는 Internal Network Load Balancer와 연결되며, Openshif Master node의 API endpoint로 forward 된다. 
 
 
-Load balancer for AWS service
-ROSA의 workload와 다른 AWS account나 VPC와 연결하기 위해서는 PrivateLink를 사용하며, CLB를 NLB로 교체해야 하며, 현재 ROSA CLI가 지원하지 않기 때문에 manual로 NLB를 만들고 OpenShift cluster의 egress를 변경해 줘야 한다. 
+### Load balancer for AWS service
+ROSA의 workload와 다른 AWS account나 VPC와 연결하기 위해서는 PrivateLink를 사용하며, 그러기 위해서는 CLB를 NLB로 교체해야 하며, 현재 ROSA CLI로는 지원하지 않기 때문에 manual하게 NLB를 만들고 OpenShift cluster의 egress를 변경해 줘야 한다. 
 
 마찬가지로 AWS WAF를 이용하고 싶으면, CLB 앞에 ALB를 두고 target을 AWS WAF로 구성한다. 
 
