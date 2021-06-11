@@ -2,6 +2,8 @@
 # Setting up cluster and accounts
  [Redhat 공식 문서](https://docs.openshift.com/rosa/rosa_getting_started/rosa-getting-started-workflow.html)를 참조해 진행한다. 
 
+
+실제 작업은 [ROSA Workshop 자료](https://openshift4-on-aws.awsworkshop.io/4-rosa-track/2-deploying-rosa/1-prerequisites/1_rosa-prerequisites.html)를 참조 한다.
 ## Prerequisites
  - Minimun SCP
  - Red Hat managed IAM references for AWS
